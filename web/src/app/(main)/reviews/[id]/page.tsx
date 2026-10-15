@@ -235,7 +235,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       {sel ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,1fr)]">
           <div className="min-w-0">
-            <SelectionEditor reviewId={r.id} sel={sel} locked={!canEdit || editWaiting} onDirty={onDirty} onSaved={() => reload()}
+            <SelectionEditor reviewId={r.id} sel={sel} locked={!canEdit || editWaiting} showExclude={r.kind === "final"} onDirty={onDirty} onSaved={() => reload()}
                              doneMessage={r.edit?.state === "done" ? r.edit.message : ""} />
           </div>
           {side}

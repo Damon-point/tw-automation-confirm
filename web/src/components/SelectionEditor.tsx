@@ -15,8 +15,10 @@ type Filter = "all" | "Y" | "X" | "changed";
  * RN 승인(1차) 결재자는 반영/미반영 · RN 문구 · 직접 추가 행 · 입력값을 고쳐 저장하고(3080 이 전체 이력 RN 을 다시 만든다),
  * 최종 검수는 읽기만 한다.
  */
-export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSaved, doneMessage }: {
+export default function SelectionEditor({ reviewId, sel, locked, showExclude, onDirty, onSaved, doneMessage }: {
   reviewId: string; sel: Selection; locked: boolean;
+  /** 미반영 사유 열 — 최종 검수에서만(읽기 전용). RN 승인(1차)에는 필요 없다. */
+  showExclude: boolean;
   onDirty: (dirty: boolean) => void; onSaved: () => void; doneMessage?: string;
 }) {
   const [rows, setRows] = useState<SelRow[]>([]);
@@ -96,6 +98,7 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
     }
   }
 
+  const cols = showExclude ? "lg:grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)_150px]" : "lg:grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)]";
   const FILTERS: [Filter, string, number][] = [
     ["all", "전체", rows.length], ["Y", "반영", nY], ["X", "미반영", rows.length - nY],
     ...(locked ? [] : [["changed", "고친 것", rows.filter(changed).length] as [Filter, string, number]]),
@@ -139,15 +142,16 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
           {!locked && <Btn size="sm" onClick={addRow}>+ 행 추가</Btn>}
         </div>
 
-        <div className="hidden grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)_150px] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 lg:grid">
-          <span>No</span><span>반영</span><span>이슈</span><span>RN 문구</span><span>미반영 사유</span>
+        <div className={cx("hidden gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 lg:grid", cols)}>
+          <span>No</span><span>반영</span><span>이슈</span><span>RN 문구</span>{showExclude && <span>미반영 사유</span>}
         </div>
         {shown.length === 0 ? <Empty>{rows.length ? "조건에 맞는 행이 없습니다" : "선별 데이터가 없습니다"}</Empty> : shown.map((r) => {
           const on = r.include === "Y";
           const k = String(r.no);
           const ch = !locked && changed(r);
           return (
-            <div key={k} className={cx("grid grid-cols-[44px_84px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 last:border-b-0 lg:grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)_150px]",
+            <div key={k} className={cx("grid grid-cols-[44px_84px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 last:border-b-0 ",
+              cols,
               !on && "bg-surface-2/60", ch && "shadow-[inset_3px_0_0_var(--color-brand)]")}>
               <div className="pt-2 font-mono text-[12.5px] text-ink-3">{r.no}</div>
               <div className="pt-1">
@@ -201,20 +205,15 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
                   <button onClick={() => setRows((rs) => rs.filter((x) => x !== r))} className="mt-1 rounded-md p-1.5 text-ink-3 hover:bg-err-soft hover:text-err" aria-label="행 삭제">✕</button>
                 )}
               </div>
-              <div className="col-span-3 lg:col-span-1">
-                {on || r.manual ? <span className="hidden pt-1.5 text-[13px] text-ink-3 lg:block">—</span>
-                  : locked ? (
+              {showExclude && (
+                <div className="col-span-3 lg:col-span-1">
+                  {on || r.manual ? <span className="hidden pt-1.5 text-[13px] text-ink-3 lg:block">—</span> : (
                     <span className={cx("inline-block pt-1.5 text-[13px]", r.exclude_note ? "font-semibold text-ink-2" : "text-ink-3")}>
                       <span className="text-ink-3 lg:hidden">미반영 사유 · </span>{r.exclude_note || "—"}
                     </span>
-                  ) : (
-                    <select value={r.exclude_note ?? ""} onChange={(e) => patch(r.no, { exclude_note: e.target.value })} aria-label="미반영 사유"
-                            className="w-full rounded-lg border border-line-strong bg-surface px-2 py-1.5 text-[13px] outline-none focus:border-brand">
-                      <option value="">사유 없음</option>
-                      {sel.exclude_notes.map((n) => <option key={n} value={n}>{n}</option>)}
-                    </select>
                   )}
-              </div>
+                </div>
+              )}
             </div>
           );
         })}
