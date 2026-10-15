@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "bcryptjs": "2.4.3",
-    "next": "15.5.4",
+    "next": "15.5.28",
     "postgres": "3.4.7",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.1.10",
+    "react-dom": "19.1.10",
     "server-only": "0.0.1"
   },
   "devDependencies": {
@@ -24,7 +24,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.4",
+    "eslint-config-next": "15.5.28",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
