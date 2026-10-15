@@ -17,11 +17,12 @@ export async function GET(req: Request) {
            (select count(*)::int from confirm_files f where f.review_id = r.id) as files
     from confirm_reviews r
     where kind in ${sql(kinds)}
+      and (cardinality(visible_to) = 0 or ${me.username} = any(visible_to))
       and ${scope === "open" ? sql`status = 'pending'` : sql`status <> 'pending'`}
     order by ${scope === "open" ? sql`requested_at asc` : sql`coalesce(decided_at, updated_at) desc`}
     limit 200`;
   const [c] = await sql<{ open: number; done: number }[]>`
     select count(*) filter (where status = 'pending')::int as open, count(*) filter (where status <> 'pending')::int as done
-    from confirm_reviews where kind in ${sql(kinds)}`;
+    from confirm_reviews where kind in ${sql(kinds)} and (cardinality(visible_to) = 0 or ${me.username} = any(visible_to))`;
   return NextResponse.json({ reviews: rows, counts: c });
 }

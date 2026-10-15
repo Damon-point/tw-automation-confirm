@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 type UserIn = { username: string; display_name?: string; email?: string; role: string; password_hash: string };
 type ReviewIn = {
   source_key: string; job_id: number; kind: string; product?: string; version?: string;
-  requested_by?: string; requested_at?: string; summary?: Record<string, unknown>;
+  requested_by?: string; requested_at?: string; summary?: Record<string, unknown>; visible_to?: string[];
 };
 /** 날짜로 읽히지 않는 값은 비운다(3080 상태 파일의 손 고친 값 등). */
 function ts(v: string | null | undefined): string | null {
@@ -46,10 +46,10 @@ export async function POST(req: Request) {
   for (const r of body.reviews ?? []) {
     if (!r.source_key || !(r.kind in KINDS)) continue;
     await sql`
-      insert into confirm_reviews (source_key, job_id, kind, product, version, requested_by, requested_at, summary)
+      insert into confirm_reviews (source_key, job_id, kind, product, version, requested_by, requested_at, summary, visible_to)
       values (${r.source_key}, ${r.job_id}, ${r.kind}, ${r.product ?? ""}, ${r.version ?? ""}, ${r.requested_by ?? ""},
-              ${ts(r.requested_at)}, ${sql.json((r.summary ?? {}) as never)})
-      on conflict (source_key) do update set summary = excluded.summary, updated_at = now()`;
+              ${ts(r.requested_at)}, ${sql.json((r.summary ?? {}) as never)}, ${(r.visible_to ?? []).filter(Boolean)})
+      on conflict (source_key) do update set summary = excluded.summary, visible_to = excluded.visible_to, updated_at = now()`;
     const [row] = await sql<{ id: string; status: string }[]>`select id, status from confirm_reviews where source_key = ${r.source_key}`;
     const files = await sql<{ name: string }[]>`select name from confirm_files where review_id = ${row.id}`;
     out[r.source_key] = { id: String(row.id), status: row.status, files: files.map((f) => f.name) };

@@ -1,4 +1,4 @@
-import { canDecide, currentUser, err } from "@/lib/auth";
+import { canSee, currentUser, err } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -8,9 +8,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const me = await currentUser();
   if (!me) return err(401, "로그인이 필요합니다");
   const id = Number((await ctx.params).id);
-  const [f] = await sql<{ name: string; mime: string; data: Buffer; kind: string }[]>`
-    select f.name, f.mime, f.data, r.kind from confirm_files f join confirm_reviews r on r.id = f.review_id where f.id = ${id}`;
-  if (!f || !canDecide(me, f.kind)) return err(404, "문서가 없습니다");
+  const [f] = await sql<{ name: string; mime: string; data: Buffer; kind: string; visible_to: string[] }[]>`
+    select f.name, f.mime, f.data, r.kind, r.visible_to from confirm_files f join confirm_reviews r on r.id = f.review_id where f.id = ${id}`;
+  if (!f || !canSee(me, f)) return err(404, "문서가 없습니다");
   const download = new URL(req.url).searchParams.get("download") === "1";
   return new Response(new Uint8Array(f.data), {
     headers: {

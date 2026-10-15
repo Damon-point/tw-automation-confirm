@@ -63,6 +63,12 @@ export function canDecide(me: Me, kind: string): boolean {
   return !!k && (k.roles as readonly string[]).includes(me.role);
 }
 
+/** 이 건을 볼 수 있나 — 역할 + (볼 사람을 정한 건이면) 그 명단. */
+export function canSee(me: Me, r: { kind: string; visible_to?: string[] | null }): boolean {
+  const only = r.visible_to ?? [];
+  return canDecide(me, r.kind) && (only.length === 0 || only.includes(me.username));
+}
+
 export const err = (status: number, error: string) => NextResponse.json({ error }, { status });
 
 /** 동기화 API — 3080 만 쓰는 열쇠(Bearer). */

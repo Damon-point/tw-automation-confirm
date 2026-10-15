@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { canDecide, currentUser, err } from "@/lib/auth";
+import { canSee, currentUser, err } from "@/lib/auth";
 import { sql } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -17,8 +17,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const memo = note.trim().slice(0, 2000);
   if (!approve && !memo) return err(400, "반려 사유를 적으세요");
 
-  const [r] = await sql`select kind, status from confirm_reviews where id = ${id}`;
-  if (!r || !canDecide(me, r.kind)) return err(404, "검수 건이 없습니다");
+  const [r] = await sql`select kind, status, visible_to from confirm_reviews where id = ${id}`;
+  if (!r || !canSee(me, r as unknown as { kind: string; visible_to: string[] })) return err(404, "검수 건이 없습니다");
   const done = await sql`
     update confirm_reviews
        set status = ${approve ? "approved" : "rejected"}, decided_by = ${me.username}, decided_at = now(), decided_via = 'web',
