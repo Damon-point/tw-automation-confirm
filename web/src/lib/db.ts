@@ -7,9 +7,14 @@ import postgres from "postgres";
  */
 const g = globalThis as unknown as { __sql?: ReturnType<typeof postgres>; __schema?: Promise<void> };
 
+const DB_URL = process.env.DATABASE_URL ?? "";
+/** 로컬 Postgres 는 SSL 없이, Supabase 같은 바깥 DB 는 SSL 필수. */
+const LOCAL_DB = /@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DB_URL);
+
 export const sql =
   g.__sql ??
-  (g.__sql = postgres(process.env.DATABASE_URL ?? "", {
+  (g.__sql = postgres(DB_URL, {
+    ssl: LOCAL_DB ? false : "require",
     max: 3,
     prepare: false,
     idle_timeout: 20,
