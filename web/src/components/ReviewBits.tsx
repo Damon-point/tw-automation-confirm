@@ -16,6 +16,13 @@ export function ReviewState({ r }: { r: Pick<ReviewRow, "status" | "process_stat
   return <span className={cx("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[12px] font-semibold", cls)}>{label}</span>;
 }
 
+/** 종류 배지 색 — 목록 · 상세 머리가 같이 쓴다. */
+export const KIND_TONE: Record<string, string> = {
+  mid: "bg-brand-soft text-brand-ink",
+  final: "bg-ok-soft text-ok",
+  newsletter: "bg-info-soft text-info",
+};
+
 export function when(iso: string | null | undefined) {
   if (!iso) return "";
   const t = new Date(iso);

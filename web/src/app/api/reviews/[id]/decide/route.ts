@@ -17,8 +17,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const memo = note.trim().slice(0, 2000);
   if (!approve && !memo) return err(400, "반려 사유를 적으세요");
 
-  const [r] = await sql`select kind, status, visible_to from confirm_reviews where id = ${id}`;
-  if (!r || !canSee(me, r as unknown as { kind: string; visible_to: string[] })) return err(404, "검수 건이 없습니다");
+  const [r] = await sql`select kind, status, visible_to, source_key from confirm_reviews where id = ${id}`;
+  if (!r || !canSee(me, r as unknown as { kind: string; visible_to: string[]; source_key: string })) return err(404, "검수 건이 없습니다");
   const [busy] = await sql`select 1 from confirm_edits where review_id = ${id} and state = 'waiting' limit 1`;
   if (busy) return err(409, "선별표 저장을 3080 이 반영하는 중입니다 — 새 문서가 올라온 뒤 결정하세요");
   const done = await sql`

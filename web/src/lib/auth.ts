@@ -63,9 +63,14 @@ export function canDecide(me: Me, kind: string): boolean {
   return !!k && (k.roles as readonly string[]).includes(me.role);
 }
 
-/** 이 건을 볼 수 있나 — 역할 + (볼 사람을 정한 건이면) 그 명단. */
-export function canSee(me: Me, r: { kind: string; visible_to?: string[] | null }): boolean {
+/**
+ * 이 건을 볼 수 있나 — 역할 + (볼 사람을 정한 건이면) 그 명단.
+ * 시험 건(source_key 'test:')은 명단에 있으면 역할과 상관없이 본다 — 3080 에 반영되지 않으므로
+ * 다른 결재자 역할의 화면을 직접 점검할 수 있게.
+ */
+export function canSee(me: Me, r: { kind: string; visible_to?: string[] | null; source_key?: string }): boolean {
   const only = r.visible_to ?? [];
+  if (only.length && (r.source_key ?? "").startsWith("test:")) return only.includes(me.username);
   return canDecide(me, r.kind) && (only.length === 0 || only.includes(me.username));
 }
 

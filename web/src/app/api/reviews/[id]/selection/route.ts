@@ -15,8 +15,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const me = await currentUser();
   if (!me) return err(401, "로그인이 필요합니다");
   const id = Number((await ctx.params).id);
-  const [r] = await sql`select kind, status, visible_to from confirm_reviews where id = ${id}`;
-  if (!r || !canSee(me, r as unknown as { kind: string; visible_to: string[] })) return err(404, "검수 건이 없습니다");
+  const [r] = await sql`select kind, status, visible_to, source_key from confirm_reviews where id = ${id}`;
+  if (!r || !canSee(me, r as unknown as { kind: string; visible_to: string[]; source_key: string })) return err(404, "검수 건이 없습니다");
   if (r.kind !== "mid") return err(400, "RN 승인(1차)에서만 고칠 수 있습니다");
   if (r.status !== "pending") return err(409, "이미 결정된 건입니다");
   const b = (await req.json().catch(() => ({}))) as { rows?: Row[]; inputs?: Input[] };

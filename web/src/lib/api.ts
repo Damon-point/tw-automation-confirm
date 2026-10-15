@@ -82,7 +82,7 @@ export type ReviewRow = {
   id: string; job_id: number; kind: "mid" | "final" | "newsletter"; product: string; version: string;
   requested_by: string; requested_at: string; status: ReviewStatus; decided_by: string; decided_at: string | null;
   decided_via: string; note: string; process_state: "" | "waiting" | "done" | "error"; process_message: string;
-  processed_at: string | null; files: number;
+  processed_at: string | null; files: number; is_test?: boolean;
 };
 export type ReviewFile = { id: string; name: string; label: string; mime: string; size: number; updated_at: string };
 

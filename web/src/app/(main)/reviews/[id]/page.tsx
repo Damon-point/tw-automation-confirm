@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import SelectionEditor from "@/components/SelectionEditor";
+import { KIND_TONE, ReviewState, when } from "@/components/ReviewBits";
 import { Icon } from "@/components/Icons";
-import { ReviewState, when } from "@/components/ReviewBits";
 import { Empty, Skeleton, cx } from "@/components/ui";
 import { api, KIND_LABEL, useApi, type NewsletterInfo, type ReviewDetail, type ReviewFile } from "@/lib/api";
 
@@ -216,7 +216,8 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       </div>
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <h1 className="text-[22px] font-bold tracking-tight">{r.product} {r.version}</h1>
-        <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[12.5px] font-bold text-brand-ink">{kind?.label}</span>
+        <span className={cx("rounded-md px-2 py-0.5 text-[12.5px] font-bold", KIND_TONE[r.kind])}>{kind?.label}</span>
+        {r.is_test && <span className="rounded-md bg-muted-soft px-1.5 py-0.5 text-[11.5px] font-bold text-ink-2">시험</span>}
         <ReviewState r={r} />
         <span className="text-[13px] text-ink-3">{kind?.target} · 요청 {r.requested_by} · {when(r.requested_at)}{r.job_id ? ` · 작업 #${r.job_id}` : ""}</span>
       </div>
