@@ -35,7 +35,7 @@ export default function InputFields({ fields, orig, editable, nowVersion, locked
         <span className="text-[12.5px] text-ink-3">GMS · SDK · Audio · Touch · Wi-Fi · 보안패치</span>
         {empty.length > 0 && <span className="ml-auto text-[12.5px] font-semibold text-warn">빈 칸 {empty.length}</span>}
       </header>
-      <div className="hidden grid-cols-[230px_minmax(0,1fr)_150px] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 md:grid">
+      <div className="hidden grid-cols-[minmax(140px,200px)_minmax(0,1fr)_200px] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 md:grid">
         <span>항목</span><span>값</span><span className="text-right">문서에 찍히는 판</span>
       </div>
       <div className="divide-y divide-line">
@@ -45,7 +45,7 @@ export default function InputFields({ fields, orig, editable, nowVersion, locked
           const ver = !f.value.trim() ? "—" : changed ? nowVersion : (f.version || nowVersion);
           const warn = f.required && !f.value.trim();
           return (
-            <div key={f.uid} className={cx("grid gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[230px_minmax(0,1fr)_150px] md:items-start",
+            <div key={f.uid} className={cx("grid gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[minmax(140px,200px)_minmax(0,1fr)_200px] md:items-start",
               changed && !locked && "shadow-[inset_3px_0_0_var(--color-brand)]")}>
               <div className="flex flex-wrap items-center gap-1.5 md:pt-2">
                 <span className="text-[13.5px] font-semibold leading-snug">{f.label}</span>
@@ -61,7 +61,7 @@ export default function InputFields({ fields, orig, editable, nowVersion, locked
                           className={cx("font-mono text-[13.5px]", warn && "border-warn/70 bg-warn-soft/40")} />
               )}
               <div className="flex items-start justify-between gap-2 md:justify-end md:pt-2">
-                <span className="whitespace-nowrap font-mono text-[12.5px] text-ink-2" title="문서에서 이 항목 위에 찍히는 판">◼ {ver}</span>
+                <span className="whitespace-nowrap font-mono text-[12px] text-ink-2" title="문서에서 이 항목 위에 찍히는 판">◼ {ver}</span>
                 {editable && !locked && (
                   <button onClick={() => onChange(fields.filter((x) => x.uid !== f.uid))} aria-label={`${f.label} 빼기`}
                           className="rounded-md p-1 text-ink-3 hover:bg-err-soft hover:text-err">✕</button>
