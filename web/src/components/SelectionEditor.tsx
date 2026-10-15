@@ -31,7 +31,7 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
 
   function reset(d: Selection) {
     setRows(d.rows.map((r) => ({ ...r })));
-    setOrig(Object.fromEntries(d.rows.map((r) => [String(r.no), `${r.include}|${r.apply_note}`])));
+    setOrig(Object.fromEntries(d.rows.map((r) => [String(r.no), `${r.include}|${r.apply_note}|${r.exclude_note ?? ""}`])));
     const fs = d.inputs.fields.map((f) => ({ ...f, uid: f.key || f.label }));
     setFields(fs);
     setOrigF(Object.fromEntries(fs.map((f) => [f.uid, f.value])));
@@ -43,7 +43,7 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stamp]);
 
-  const sig = (r: SelRow) => `${r.include}|${r.apply_note}`;
+  const sig = (r: SelRow) => `${r.include}|${r.apply_note}|${r.exclude_note ?? ""}`;
   const changed = (r: SelRow) => r.manual ? !!r.apply_note.trim() && orig[String(r.no)] !== sig(r) : orig[String(r.no)] !== sig(r);
   const fieldsChanged = fields.filter((f) => origF[f.uid] !== f.value).length + Math.abs(fields.length - Object.keys(origF).length);
   const rowsChanged = rows.filter(changed).length + Math.max(0, sel.rows.length - rows.length);
@@ -61,7 +61,7 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
     const ql = q.trim().toLowerCase();
     return rows.filter((r) =>
       (filter === "all" || (filter === "changed" ? changed(r) : r.include === filter)) &&
-      (!ql || `${r.no} ${r.issue} ${r.apply_note} ${r.team} ${r.customer} ${r.redmine}`.toLowerCase().includes(ql)));
+      (!ql || `${r.no} ${r.issue} ${r.apply_note} ${r.public} ${r.exclude_note} ${r.team} ${r.customer} ${r.redmine}`.toLowerCase().includes(ql)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, filter, q, orig]);
 
@@ -72,6 +72,7 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
     const on = r.include !== "Y";
     const p: Partial<SelRow> = { include: on ? "Y" : "X" };
     if (on && !r.apply_note.trim()) p.apply_note = r.public ?? "";   // 반영 항목은 실릴 문구가 늘 보여야 한다
+    if (on) p.exclude_note = "";                                       // 반영으로 바꾸면 미반영 사유는 비운다
     patch(r.no, p);
   }
   function addRow() {
@@ -138,15 +139,15 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
           {!locked && <Btn size="sm" onClick={addRow}>+ 행 추가</Btn>}
         </div>
 
-        <div className="hidden grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 lg:grid">
-          <span>No</span><span>반영</span><span>이슈</span><span>RN 문구</span>
+        <div className="hidden grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)_150px] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 lg:grid">
+          <span>No</span><span>반영</span><span>이슈</span><span>RN 문구</span><span>미반영 사유</span>
         </div>
         {shown.length === 0 ? <Empty>{rows.length ? "조건에 맞는 행이 없습니다" : "선별 데이터가 없습니다"}</Empty> : shown.map((r) => {
           const on = r.include === "Y";
           const k = String(r.no);
           const ch = !locked && changed(r);
           return (
-            <div key={k} className={cx("grid grid-cols-[44px_84px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 last:border-b-0 lg:grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)]",
+            <div key={k} className={cx("grid grid-cols-[44px_84px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 last:border-b-0 lg:grid-cols-[44px_84px_minmax(0,1fr)_minmax(0,1.2fr)_150px]",
               !on && "bg-surface-2/60", ch && "shadow-[inset_3px_0_0_var(--color-brand)]")}>
               <div className="pt-2 font-mono text-[12.5px] text-ink-3">{r.no}</div>
               <div className="pt-1">
@@ -173,7 +174,6 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
                       {r.team && <span>{r.team}</span>}
                       {r.customer && <span>· {r.customer}</span>}
                       {r.redmine?.startsWith("http") && <a href={r.redmine} target="_blank" rel="noreferrer" className="font-mono text-brand-ink hover:underline">#{r.redmine.split("/").pop()}</a>}
-                      {!on && r.exclude_note && <Tag>{r.exclude_note}</Tag>}
                       {r.reason && <button onClick={() => setOpenReason(openReason === k ? "" : k)} className="text-brand-ink hover:underline">{openReason === k ? "판정 사유 접기" : "판정 사유"}</button>}
                     </div>
                     {openReason === k && <div className="mt-1.5 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[12.5px] text-ink-2">{r.reason}</div>}
@@ -183,7 +183,10 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
               <div className="col-span-3 flex items-start gap-1.5 lg:col-span-1">
                 <div className="min-w-0 flex-1">
                   {locked || (!on && !r.manual) ? (
-                    <div className={cx("px-1 pt-1.5 text-[14px] leading-relaxed", on ? "text-ink" : "text-ink-3")}>{on ? r.apply_note : "—"}</div>
+                    // 미반영이어도 어떤 문구였는지 보인다(반영 문구가 없으면 공개 문구)
+                    <div className={cx("px-1 pt-1.5 text-[14px] leading-relaxed", on ? "text-ink" : "text-ink-2")}>
+                      {(on ? r.apply_note : (r.apply_note || r.public)) || "—"}
+                    </div>
                   ) : (
                     <>
                       <GrowText value={r.apply_note} placeholder={r.manual ? "RN 에 넣을 문구" : r.public}
@@ -197,6 +200,20 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
                 {r.manual && !locked && (
                   <button onClick={() => setRows((rs) => rs.filter((x) => x !== r))} className="mt-1 rounded-md p-1.5 text-ink-3 hover:bg-err-soft hover:text-err" aria-label="행 삭제">✕</button>
                 )}
+              </div>
+              <div className="col-span-3 lg:col-span-1">
+                {on || r.manual ? <span className="hidden pt-1.5 text-[13px] text-ink-3 lg:block">—</span>
+                  : locked ? (
+                    <span className={cx("inline-block pt-1.5 text-[13px]", r.exclude_note ? "font-semibold text-ink-2" : "text-ink-3")}>
+                      <span className="text-ink-3 lg:hidden">미반영 사유 · </span>{r.exclude_note || "—"}
+                    </span>
+                  ) : (
+                    <select value={r.exclude_note ?? ""} onChange={(e) => patch(r.no, { exclude_note: e.target.value })} aria-label="미반영 사유"
+                            className="w-full rounded-lg border border-line-strong bg-surface px-2 py-1.5 text-[13px] outline-none focus:border-brand">
+                      <option value="">사유 없음</option>
+                      {sel.exclude_notes.map((n) => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  )}
               </div>
             </div>
           );
