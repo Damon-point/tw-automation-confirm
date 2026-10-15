@@ -21,7 +21,7 @@ export default function TopBar({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-[1100px] items-center gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-[1680px] items-center gap-3 px-4">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#5b8cff] to-[#2f6bff] text-[12px] font-extrabold text-white">tw</span>
             <span className="leading-tight">
@@ -42,7 +42,7 @@ export default function TopBar({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1100px] px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-[1680px] px-4 py-6">{children}</main>
     </div>
   );
 }

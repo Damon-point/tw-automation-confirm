@@ -15,7 +15,7 @@ export default function Home() {
   const { data, loading, error } = useApi<List>(`/api/reviews?scope=${scope}`, 30_000);
 
   return (
-    <>
+    <div className="mx-auto max-w-[1100px]">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[22px] font-bold tracking-tight">검수</h1>
@@ -58,6 +58,6 @@ export default function Home() {
           ))}
         </div>
       ) : <Empty>{scope === "open" ? "결정을 기다리는 검수가 없습니다" : "처리한 검수가 없습니다"}</Empty>}
-    </>
+    </div>
   );
 }

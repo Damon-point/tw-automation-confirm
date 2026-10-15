@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Icon } from "@/components/Icons";
+import GrowText from "@/components/GrowText";
 import { Tag, cx } from "@/components/ui";
 import type { InputField } from "@/lib/api";
 import { Btn, inputCls } from "./kit";
@@ -28,35 +29,39 @@ export default function InputFields({ fields, orig, editable, nowVersion, locked
   }
 
   return (
-    <section className="mb-5 overflow-hidden rounded-2xl border border-line bg-surface">
-      <header className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-        <h2 className="text-[15px] font-bold">입력 값</h2>
-        <span className="text-[12.5px] text-ink-3">GMS · SDK · Audio · Touch · Wi-Fi · 보안패치 — 단말에서 확인한 값</span>
-        {empty.length > 0 && <span className="ml-auto text-[12.5px] text-warn">빈 칸 {empty.length}</span>}
+    <section className="rounded-2xl border border-line bg-surface">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
+        <h2 className="text-[16px] font-bold">입력 값</h2>
+        <span className="text-[12.5px] text-ink-3">GMS · SDK · Audio · Touch · Wi-Fi · 보안패치</span>
+        {empty.length > 0 && <span className="ml-auto text-[12.5px] font-semibold text-warn">빈 칸 {empty.length}</span>}
       </header>
-      {editable && !locked && (
-        <div className="border-b border-line bg-info-soft/50 px-4 py-2 text-[12.5px] text-info">
-          최초 버전이라 참고할 이전 RN 이 없습니다. 이 제품에 없는 항목은 빼고, 빠진 항목은 더할 수 있습니다.
-        </div>
-      )}
+      <div className="hidden grid-cols-[230px_minmax(0,1fr)_150px] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 md:grid">
+        <span>항목</span><span>값</span><span className="text-right">문서에 찍히는 판</span>
+      </div>
       <div className="divide-y divide-line">
         {fields.map((f) => {
           const was = orig[f.uid];
           const changed = was !== undefined ? was !== f.value : !!f.value.trim();
           const ver = !f.value.trim() ? "—" : changed ? nowVersion : (f.version || nowVersion);
+          const warn = f.required && !f.value.trim();
           return (
-            <div key={f.uid} className="grid gap-2 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px] md:items-start">
-              <div className="pt-1.5">
-                <div className="text-[13px] font-semibold">{f.label}</div>
-                <div className="mt-0.5 flex flex-wrap gap-1">
-                  {f.manual && !changed && <Tag>직접 입력</Tag>}
-                  {changed && <Tag tone="warn">수정</Tag>}
-                  {!f.key && <Tag tone="ok">새 항목</Tag>}
-                </div>
+            <div key={f.uid} className={cx("grid gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[230px_minmax(0,1fr)_150px] md:items-start",
+              changed && !locked && "shadow-[inset_3px_0_0_var(--color-brand)]")}>
+              <div className="flex flex-wrap items-center gap-1.5 md:pt-2">
+                <span className="text-[13.5px] font-semibold leading-snug">{f.label}</span>
+                {changed && !locked && <Tag tone="warn">수정</Tag>}
+                {f.manual && !changed && <Tag>직접 입력</Tag>}
+                {!f.key && <Tag tone="ok">새 항목</Tag>}
               </div>
-              <Grow value={f.value} disabled={locked} warn={f.required && !f.value.trim()} onChange={(v) => set(f.uid, v)} />
-              <div className="flex items-start justify-between gap-2 pt-2 md:justify-end">
-                <span className="whitespace-nowrap font-mono text-[12px] text-ink-3" title="문서에서 이 항목 위에 찍히는 판">◼ {ver}</span>
+              {locked ? (
+                <div className={cx("whitespace-pre-wrap break-words rounded-lg bg-surface-2 px-3 py-2 font-mono text-[13.5px] leading-relaxed",
+                  f.value.trim() ? "text-ink" : "text-ink-3")}>{f.value.trim() || "비어 있음"}</div>
+              ) : (
+                <GrowText value={f.value} onChange={(v) => set(f.uid, v)} placeholder={warn ? "입력 필요" : ""}
+                          className={cx("font-mono text-[13.5px]", warn && "border-warn/70 bg-warn-soft/40")} />
+              )}
+              <div className="flex items-start justify-between gap-2 md:justify-end md:pt-2">
+                <span className="whitespace-nowrap font-mono text-[12.5px] text-ink-2" title="문서에서 이 항목 위에 찍히는 판">◼ {ver}</span>
                 {editable && !locked && (
                   <button onClick={() => onChange(fields.filter((x) => x.uid !== f.uid))} aria-label={`${f.label} 빼기`}
                           className="rounded-md p-1 text-ink-3 hover:bg-err-soft hover:text-err">✕</button>
@@ -74,19 +79,5 @@ export default function InputFields({ fields, orig, editable, nowVersion, locked
         </div>
       )}
     </section>
-  );
-}
-
-function Grow({ value, onChange, disabled, warn }: { value: string; onChange: (v: string) => void; disabled?: boolean; warn?: boolean }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight + 2}px`; }
-  }, [value]);
-  return (
-    <textarea ref={ref} rows={1} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}
-              placeholder={warn ? "입력 필요" : "여러 줄이면 줄마다 글머리가 붙습니다"}
-              className={cx(inputCls, "resize-none overflow-hidden py-1.5 font-mono text-[13px] leading-relaxed",
-                warn && "border-warn/70 bg-warn-soft/40")} />
   );
 }
