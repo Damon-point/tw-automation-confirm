@@ -21,6 +21,7 @@ export const KIND_TONE: Record<string, string> = {
   mid: "bg-brand-soft text-brand-ink",
   final: "bg-ok-soft text-ok",
   newsletter: "bg-info-soft text-info",
+  license: "bg-surface-2 text-ink ring-1 ring-line-strong",
 };
 
 export function when(iso: string | null | undefined) {

@@ -47,7 +47,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <AuthShell sub="Release Note · 뉴스레터 결재">
+    <AuthShell sub="Release Note · 뉴스레터 · License 결재">
       <Suspense>
         <LoginForm />
       </Suspense>

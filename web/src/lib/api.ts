@@ -79,7 +79,7 @@ export type Me = { username: string; display_name: string; role: string; email: 
 
 export type ReviewStatus = "pending" | "approved" | "rejected" | "closed";
 export type ReviewRow = {
-  id: string; job_id: number; kind: "mid" | "final" | "newsletter"; product: string; version: string;
+  id: string; job_id: number; kind: "mid" | "final" | "newsletter" | "license"; product: string; version: string;
   requested_by: string; requested_at: string; status: ReviewStatus; decided_by: string; decided_at: string | null;
   decided_via: string; note: string; process_state: "" | "waiting" | "done" | "error"; process_message: string;
   processed_at: string | null; files: number; is_test?: boolean;
@@ -99,10 +99,15 @@ export type Selection = {
 };
 export type NewsletterCard = { topic: string; title_en: string; body_en: string; title_ko: string; body_ko: string };
 export type NewsletterInfo = { subject: string; product: string; os_version: string; cards: NewsletterCard[] };
+export type LicenseInfo = {
+  doc_id: string; date_issued: string; company_name: string; quantity: string; license_user_id: string;
+  contact_name: string; contact_email: string; recipient_email: string; recovery_email: string;
+  part_number: string; type: string; note: string; requested_by: string; po_name: string;
+};
 export type ReviewEdit = { id: string; by_user: string; at: string; state: "waiting" | "done" | "error"; message: string };
 
 export type ReviewDetail = ReviewRow & {
-  summary: { revision?: string[]; lines?: { label: string; value: string }[]; links?: { label: string; url: string }[]; selection?: Selection; newsletter?: NewsletterInfo };
+  summary: { revision?: string[]; lines?: { label: string; value: string }[]; links?: { label: string; url: string }[]; selection?: Selection; newsletter?: NewsletterInfo; license?: LicenseInfo };
   files: ReviewFile[]; events: { at: string; who: string; what: string }[]; can_decide: boolean; edit: ReviewEdit | null;
 };
 
@@ -110,6 +115,7 @@ export const KIND_LABEL: Record<string, { label: string; target: string }> = {
   mid: { label: "RN 승인 (1차)", target: "Release Note · 전체 이력" },
   final: { label: "최종 검수 (2차)", target: "Release Note for Sales" },
   newsletter: { label: "뉴스레터 결재", target: "Newsletter" },
+  license: { label: "License 검수", target: "PMDM License Key" },
 };
 
 export function ago(iso: string) {

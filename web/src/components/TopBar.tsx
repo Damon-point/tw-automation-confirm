@@ -26,7 +26,7 @@ export default function TopBar({ children }: { children: React.ReactNode }) {
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#5b8cff] to-[#2f6bff] text-[12px] font-extrabold text-white">tw</span>
             <span className="leading-tight">
               <span className="block text-[14.5px] font-bold">TW Automation 검수</span>
-              <span className="hidden text-[11px] text-ink-3 sm:block">Release Note · 뉴스레터 결재</span>
+              <span className="hidden text-[11px] text-ink-3 sm:block">Release Note · 뉴스레터 · License 결재</span>
             </span>
           </Link>
           <span className="flex-1" />

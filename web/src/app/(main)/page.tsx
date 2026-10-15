@@ -39,7 +39,7 @@ export default function Home() {
     <>
       <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h1 className="text-[22px] font-bold tracking-tight">검수</h1>
-        <span className="text-[13px] text-ink-3">승인하면 3080 이 PDF 확정 · 파일서버 저장 · 결과 메일까지 처리합니다</span>
+        <span className="text-[13px] text-ink-3">승인 · 반려하면 3080 이 이어서 문서 확정 · 저장 · 결과 메일까지 처리합니다</span>
       </div>
 
       <section className="rounded-2xl border border-line bg-surface">
@@ -90,7 +90,7 @@ export default function Home() {
             <span className="justify-self-end lg:hidden"><ReviewState r={r} /></span>
             <span className="col-span-2 min-w-0 lg:col-span-1">
               <span className="block truncate text-[15px] font-bold">{r.product} {r.version}</span>
-              <span className="block truncate text-[12.5px] text-ink-3">{KIND_LABEL[r.kind]?.target}{r.job_id ? ` · 작업 #${r.job_id}` : ""}</span>
+              <span className="block truncate text-[12.5px] text-ink-3">{KIND_LABEL[r.kind]?.target}{r.job_id && r.kind !== "license" ? ` · 작업 #${r.job_id}` : ""}</span>
             </span>
             {open ? (
               <>

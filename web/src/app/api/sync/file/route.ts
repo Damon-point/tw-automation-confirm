@@ -5,7 +5,10 @@ import { sql } from "@/lib/db";
 export const runtime = "nodejs";
 
 const MIMES = new Set(["application/pdf", "text/html; charset=utf-8",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]);
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  // License 검수의 PO — 3080 이 받는 형식 그대로
+  "image/png", "image/jpeg", "application/msword",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"]);
 
 /** 3080 → 검수 웹. 문서 하나 — base64 본문이 Vercel 함수 본문 한도(4.5MB) 안에 들도록 원본 3.3MB 까지. 같은 이름이면 바꿔 넣는다. */
 export async function POST(req: Request) {

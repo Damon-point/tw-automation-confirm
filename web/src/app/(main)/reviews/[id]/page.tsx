@@ -6,7 +6,7 @@ import SelectionEditor from "@/components/SelectionEditor";
 import { KIND_TONE, ReviewState, when } from "@/components/ReviewBits";
 import { Icon } from "@/components/Icons";
 import { Empty, Skeleton, cx } from "@/components/ui";
-import { api, KIND_LABEL, useApi, type NewsletterInfo, type ReviewDetail, type ReviewFile } from "@/lib/api";
+import { api, KIND_LABEL, useApi, type LicenseInfo, type NewsletterInfo, type ReviewDetail, type ReviewFile } from "@/lib/api";
 
 function kb(n: number) {
   return n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
@@ -19,6 +19,7 @@ function Viewer({ files, tall }: { files: ReviewFile[]; tall?: boolean }) {
   if (!f) return <Empty>올라온 문서가 없습니다</Empty>;
   const src = `/api/files/${f.id}`;
   const html = f.mime.startsWith("text/html");
+  const image = f.mime.startsWith("image/");
   const viewable = html || f.mime === "application/pdf";
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface">
@@ -42,8 +43,17 @@ function Viewer({ files, tall }: { files: ReviewFile[]; tall?: boolean }) {
         <iframe key={`${f.id}-${f.updated_at}`} src={`${src}?v=${encodeURIComponent(f.updated_at ?? "")}${html ? "" : "#navpanes=0&view=FitH"}`} title={f.label || f.name}
                 sandbox={html ? "" : undefined}
                 className={cx("w-full flex-1", tall ? "min-h-[480px]" : "h-[75vh] min-h-[480px]", html ? "bg-white" : "bg-surface-2")} />
+      ) : image ? (
+        <div className={cx("flex-1 overflow-auto bg-surface-2 p-3", !tall && "max-h-[75vh]")}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${src}?v=${encodeURIComponent(f.updated_at ?? "")}`} alt={f.label || f.name} className="mx-auto max-w-full rounded-lg bg-white shadow" />
+        </div>
       ) : (
-        <div className="px-4 py-10 text-center text-[13px] text-ink-2">{f.name} — 받아서 엽니다</div>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-12 text-center">
+          <Icon name="file" className="h-8 w-8 text-ink-3" />
+          <div className="text-[14px] font-semibold">{f.name}</div>
+          <a href={`${src}?download=1`} className="rounded-lg bg-brand px-4 py-2 text-[13.5px] font-bold text-white hover:bg-brand-ink">받아서 열기 · {kb(f.size)}</a>
+        </div>
       )}
     </section>
   );
@@ -164,6 +174,47 @@ function NewsletterPanel({ nl }: { nl: NewsletterInfo }) {
   );
 }
 
+/** License 발급 요청 — 결재 판단에 필요한 칸만 한 표로. PO 는 오른쪽 문서. */
+function LicensePanel({ lic }: { lic: LicenseInfo }) {
+  const rows: [string, React.ReactNode, boolean?][] = [
+    ["회사명", lic.company_name, true],
+    ["수량", lic.quantity ? `${lic.quantity}대` : "", true],
+    ["PMDM ID", <span key="id" className="font-mono">{lic.license_user_id}</span>, true],
+    ["담당자", [lic.contact_name, lic.contact_email].filter(Boolean).join(" · ")],
+    ["결과 받는 메일", lic.recipient_email],
+    ["복구 메일", lic.recovery_email],
+    ["Part No. · 유형", [lic.part_number, lic.type].filter(Boolean).join(" · ")],
+    ["문서 번호", <span key="doc" className="font-mono">{lic.doc_id}</span>],
+    ["신청일", lic.date_issued],
+    ["요청자", lic.requested_by],
+    ["PO 파일", lic.po_name],
+  ];
+  return (
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-line bg-surface">
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
+          <h2 className="text-[16px] font-bold">License 발급 요청</h2>
+          <span className="text-[12.5px] text-ink-3">승인하면 3080 이 License Key 생성 · 공개키 검증 · 인증서 PDF · 결과 메일까지 처리합니다</span>
+        </header>
+        <div className="divide-y divide-line">
+          {rows.filter(([, v]) => v !== "" && v != null).map(([k, v, strong]) => (
+            <div key={k} className="grid gap-x-3 gap-y-0.5 px-4 py-2.5 md:grid-cols-[minmax(120px,170px)_minmax(0,1fr)]">
+              <span className="text-[13px] font-semibold text-ink-2 md:pt-0.5">{k}</span>
+              <span className={cx("min-w-0 break-words", strong ? "text-[15px] font-bold" : "text-[14px]")}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+      {lic.note && (
+        <section className="rounded-2xl border border-line bg-surface">
+          <h2 className="border-b border-line px-4 py-3 text-[16px] font-bold">요청 메모</h2>
+          <div className="whitespace-pre-wrap break-words px-4 py-3 text-[14px] leading-relaxed">{lic.note}</div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function History({ events }: { events: ReviewDetail["events"] }) {
   if (!events.length) return null;
   return (
@@ -201,6 +252,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     : dirty ? "공개 선별표 · 입력값에 저장하지 않은 변경이 있습니다" : "";
   const revision = r.summary?.revision ?? [];
   const nl = r.summary?.newsletter;
+  const lic = r.summary?.license;
   const side = (
     <div className="min-w-0 xl:sticky xl:top-[calc(3.5rem+5.5rem)] xl:h-[calc(100vh-3.5rem-6.5rem)]">
       <Viewer files={r.files} tall />
@@ -219,7 +271,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         <span className={cx("rounded-md px-2 py-0.5 text-[12.5px] font-bold", KIND_TONE[r.kind])}>{kind?.label}</span>
         {r.is_test && <span className="rounded-md bg-muted-soft px-1.5 py-0.5 text-[11.5px] font-bold text-ink-2">시험</span>}
         <ReviewState r={r} />
-        <span className="text-[13px] text-ink-3">{kind?.target} · 요청 {r.requested_by} · {when(r.requested_at)}{r.job_id ? ` · 작업 #${r.job_id}` : ""}</span>
+        <span className="text-[13px] text-ink-3">{kind?.target} · 요청 {r.requested_by} · {when(r.requested_at)}{r.job_id && r.kind !== "license" ? ` · 작업 #${r.job_id}` : ""}</span>
       </div>
 
       <div className="sticky top-14 z-20 -mx-1 mb-4 bg-bg/90 px-1 py-2 backdrop-blur">
@@ -238,6 +290,11 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
             <SelectionEditor reviewId={r.id} sel={sel} locked={!canEdit || editWaiting} showExclude={r.kind === "final"} onDirty={onDirty} onSaved={() => reload()}
                              doneMessage={r.edit?.state === "done" ? r.edit.message : ""} />
           </div>
+          {side}
+        </div>
+      ) : lic ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(560px,1.15fr)]">
+          <div className="min-w-0"><LicensePanel lic={lic} /></div>
           {side}
         </div>
       ) : nl ? (

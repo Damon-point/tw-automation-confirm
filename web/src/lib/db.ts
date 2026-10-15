@@ -27,6 +27,7 @@ export const KINDS = {
   mid: { label: "RN 승인 (1차)", target: "Release Note (전체 이력)", roles: ["mid_reviewer", "admin"] },
   final: { label: "최종 검수 (2차)", target: "Release Note for Sales", roles: ["final_reviewer", "admin"] },
   newsletter: { label: "뉴스레터 결재", target: "Newsletter", roles: ["final_reviewer", "admin"] },
+  license: { label: "License 검수", target: "PMDM License Key", roles: ["final_reviewer", "admin"] },
 } as const;
 export type Kind = keyof typeof KINDS;
 
