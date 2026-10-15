@@ -105,6 +105,7 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
       <section className="rounded-2xl border border-line bg-surface">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-3">
           <h2 className="text-[16px] font-bold">공개 선별표</h2>
+          {locked && <Tag>읽기 전용</Tag>}
           <span className="text-[13px] text-ink-2">반영 <b className="text-brand-ink">{nY}</b> · 미반영 {rows.length - nY}</span>
           {sel.edited_by && <span className="text-[12.5px] text-ink-3">마지막 저장 {sel.edited_by} · {ago(sel.edited_at)}</span>}
           <span className="flex-1" />
@@ -149,7 +150,10 @@ export default function SelectionEditor({ reviewId, sel, locked, onDirty, onSave
               !on && "bg-surface-2/60", ch && "shadow-[inset_3px_0_0_var(--color-brand)]")}>
               <div className="pt-2 font-mono text-[12.5px] text-ink-3">{r.no}</div>
               <div className="pt-1">
-                {r.manual ? <Tag tone="ok">직접 추가</Tag> : (
+                {r.manual ? <Tag tone="ok">직접 추가</Tag> : locked ? (
+                  <span className={cx("inline-flex h-7 w-[76px] items-center justify-center rounded-full text-[12px] font-bold",
+                    on ? "bg-brand-soft text-brand-ink" : "bg-muted-soft text-ink-3")}>{on ? "반영" : "미반영"}</span>
+                ) : (
                   <button role="switch" aria-checked={on} disabled={locked} onClick={() => toggle(r)}
                     className={cx("relative inline-flex h-7 w-[76px] items-center rounded-full text-[12px] font-bold transition",
                       on ? "bg-brand text-white" : "bg-muted-soft text-ink-2", locked && "cursor-default")}>

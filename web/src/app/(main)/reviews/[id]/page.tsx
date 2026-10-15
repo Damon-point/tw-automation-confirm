@@ -6,7 +6,7 @@ import SelectionEditor from "@/components/SelectionEditor";
 import { Icon } from "@/components/Icons";
 import { ReviewState, when } from "@/components/ReviewBits";
 import { Empty, Skeleton, cx } from "@/components/ui";
-import { api, KIND_LABEL, useApi, type ReviewDetail, type ReviewFile } from "@/lib/api";
+import { api, KIND_LABEL, useApi, type NewsletterInfo, type ReviewDetail, type ReviewFile } from "@/lib/api";
 
 function kb(n: number) {
   return n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
@@ -122,6 +122,48 @@ function Outcome({ r }: { r: ReviewDetail }) {
   );
 }
 
+const TOPIC: Record<string, string> = { security: "보안 패치", common: "공통", new: "신규 기능", fix: "수정", improve: "개선" };
+/** 카드 본문에 섞인 링크 태그 등은 걷어내고 글자만 — HTML 을 그대로 넣지 않는다. */
+const plain = (s: string) => s.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
+
+/** 뉴스레터 내용 — 메일 제목 · 카드(EN / KR)를 읽기 전용으로 나란히. 완성본은 오른쪽 문서. */
+function NewsletterPanel({ nl }: { nl: NewsletterInfo }) {
+  return (
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-line bg-surface">
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
+          <h2 className="text-[16px] font-bold">뉴스레터 내용</h2>
+          <span className="text-[13px] text-ink-2">카드 <b className="text-brand-ink">{nl.cards.length}</b></span>
+          <span className="text-[12.5px] text-ink-3">{nl.product} · {nl.os_version}</span>
+        </header>
+        <div className="grid gap-x-3 gap-y-1 border-b border-line px-4 py-3 md:grid-cols-[minmax(140px,200px)_minmax(0,1fr)]">
+          <span className="text-[13.5px] font-semibold md:pt-2">메일 제목</span>
+          <div className="rounded-lg bg-surface-2 px-3 py-2 text-[14px] leading-relaxed">{nl.subject || "—"}</div>
+        </div>
+        <div className="hidden grid-cols-[76px_minmax(0,1fr)_minmax(0,1fr)] gap-3 border-b border-line px-4 py-2 text-[12px] font-bold text-ink-3 lg:grid">
+          <span>No</span><span>EN</span><span>KR</span>
+        </div>
+        {nl.cards.length === 0 ? <Empty>카드가 없습니다</Empty> : nl.cards.map((c, i) => (
+          <div key={i} className="grid grid-cols-[76px_minmax(0,1fr)] gap-x-3 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 lg:grid-cols-[76px_minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="pt-0.5">
+              <div className="font-mono text-[12.5px] text-ink-3">{i + 1}</div>
+              {c.topic && <span className="mt-1 inline-block whitespace-nowrap rounded bg-muted-soft px-1.5 py-0.5 text-[11px] font-semibold text-ink-2">{TOPIC[c.topic] ?? c.topic}</span>}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[14px] font-bold leading-snug">{plain(c.title_en) || "—"}</div>
+              <div className="mt-1 whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-ink-2">{plain(c.body_en)}</div>
+            </div>
+            <div className="col-start-2 min-w-0 border-t border-dashed border-line pt-2 lg:col-start-3 lg:border-t-0 lg:pt-0">
+              <div className="text-[14px] font-bold leading-snug">{plain(c.title_ko) || "—"}</div>
+              <div className="mt-1 whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-ink-2">{plain(c.body_ko)}</div>
+            </div>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+
 function History({ events }: { events: ReviewDetail["events"] }) {
   if (!events.length) return null;
   return (
@@ -158,6 +200,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   const blocked = editWaiting ? "저장한 선별표로 3080 이 전체 이력 RN 을 다시 만드는 중입니다"
     : dirty ? "공개 선별표 · 입력값에 저장하지 않은 변경이 있습니다" : "";
   const revision = r.summary?.revision ?? [];
+  const nl = r.summary?.newsletter;
+  const side = (
+    <div className="min-w-0 xl:sticky xl:top-[calc(3.5rem+5.5rem)] xl:h-[calc(100vh-3.5rem-6.5rem)]">
+      <Viewer files={r.files} tall />
+    </div>
+  );
 
   return (
     <>
@@ -189,9 +237,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
             <SelectionEditor reviewId={r.id} sel={sel} locked={!canEdit || editWaiting} onDirty={onDirty} onSaved={() => reload()}
                              doneMessage={r.edit?.state === "done" ? r.edit.message : ""} />
           </div>
-          <div className="min-w-0 xl:sticky xl:top-[calc(3.5rem+5.5rem)] xl:h-[calc(100vh-3.5rem-6.5rem)]">
-            <Viewer files={r.files} tall />
-          </div>
+          {side}
+        </div>
+      ) : nl ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(560px,1.15fr)]">
+          <div className="min-w-0"><NewsletterPanel nl={nl} /></div>
+          {side}
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">

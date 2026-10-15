@@ -32,6 +32,7 @@ export default function InputFields({ fields, orig, editable, nowVersion, locked
     <section className="rounded-2xl border border-line bg-surface">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
         <h2 className="text-[16px] font-bold">입력 값</h2>
+        {locked && <Tag>읽기 전용</Tag>}
         <span className="text-[12.5px] text-ink-3">GMS · SDK · Audio · Touch · Wi-Fi · 보안패치</span>
         {empty.length > 0 && <span className="ml-auto text-[12.5px] font-semibold text-warn">빈 칸 {empty.length}</span>}
       </header>

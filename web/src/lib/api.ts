@@ -97,10 +97,12 @@ export type Selection = {
   rows: SelRow[]; inputs: { fields: InputField[]; editable: boolean; now_version: string };
   exclude_notes: string[]; edited_at: string; edited_by: string; editable: boolean;
 };
+export type NewsletterCard = { topic: string; title_en: string; body_en: string; title_ko: string; body_ko: string };
+export type NewsletterInfo = { subject: string; product: string; os_version: string; cards: NewsletterCard[] };
 export type ReviewEdit = { id: string; by_user: string; at: string; state: "waiting" | "done" | "error"; message: string };
 
 export type ReviewDetail = ReviewRow & {
-  summary: { revision?: string[]; lines?: { label: string; value: string }[]; links?: { label: string; url: string }[]; selection?: Selection };
+  summary: { revision?: string[]; lines?: { label: string; value: string }[]; links?: { label: string; url: string }[]; selection?: Selection; newsletter?: NewsletterInfo };
   files: ReviewFile[]; events: { at: string; who: string; what: string }[]; can_decide: boolean; edit: ReviewEdit | null;
 };
 
