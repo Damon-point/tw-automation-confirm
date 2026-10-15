@@ -43,9 +43,10 @@ TWN_CONFIRM_PUBLIC_URL=                       # 결재 요청 메일에 넣을 �
 
 ## 배포 (Vercel + Supabase)
 
-1. Supabase 프로젝트 → Database → Connection pooling(Transaction, 6543) 주소를 `DATABASE_URL` 로.
+1. Supabase 프로젝트(지역 Seoul) → Connect → Transaction pooler(6543) 주소를 `DATABASE_URL` 로.
 2. Vercel 프로젝트 Root Directory = `web`, 환경변수 `DATABASE_URL` · `SESSION_SECRET`(32자 이상) · `SYNC_TOKEN`.
-3. 표는 첫 동기화 때 자동으로 만든다(`ensureSchema`).
+3. 표는 첫 동기화 때 자동으로 만든다(`ensureSchema`). RLS 를 켜 두어 Supabase Data API(anon 키)로는 읽히지 않는다.
+   함수 지역은 `web/vercel.json` 에서 서울(icn1) — Supabase 와 같은 지역에 둔다.
 4. 3080 `backend/.env` 의 `TWN_CONFIRM_URL` 을 Vercel 주소로 바꾸고 3080 API 재시작.
 
 문서는 요청 하나에 하나씩 올린다 — Vercel 함수 본문 한도(4.5MB) 때문에 원본 3.3MB 까지.

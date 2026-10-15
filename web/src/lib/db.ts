@@ -80,6 +80,12 @@ create table if not exists confirm_events (
   who text not null default '',
   what text not null default ''
 );
+-- Supabase 는 public 표를 Data API(anon 키)로 연다 — RLS 를 켜고 정책을 두지 않아 그 길을 막는다.
+-- 앱은 표 주인(postgres)으로 직접 붙으므로 RLS 를 받지 않는다.
+alter table confirm_users enable row level security;
+alter table confirm_reviews enable row level security;
+alter table confirm_files enable row level security;
+alter table confirm_events enable row level security;
 `;
 
 /** 표가 없으면 만든다(첫 요청 한 번). 배포처 DB 를 따로 준비하지 않아도 된다. */
