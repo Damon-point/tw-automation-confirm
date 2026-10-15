@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
+import SelectionEditor from "@/components/SelectionEditor";
 import { Icon } from "@/components/Icons";
 import { ReviewState, when } from "@/components/ReviewBits";
 import { Card, Empty, Skeleton, cx } from "@/components/ui";
@@ -38,7 +39,7 @@ function Viewer({ files }: { files: ReviewFile[] }) {
         </a>
       </div>
       {viewable ? (
-        <iframe key={f.id} src={src} title={f.label || f.name}
+        <iframe key={`${f.id}-${f.updated_at}`} src={`${src}?v=${encodeURIComponent(f.updated_at ?? "")}`} title={f.label || f.name}
                 sandbox={html ? "" : undefined}
                 className={cx("h-[72vh] min-h-[420px] w-full rounded-xl border border-line", html ? "bg-white" : "bg-surface-2")} />
       ) : (
@@ -50,7 +51,7 @@ function Viewer({ files }: { files: ReviewFile[] }) {
   );
 }
 
-function DecidePanel({ r, onDone }: { r: ReviewDetail; onDone: () => void }) {
+function DecidePanel({ r, onDone, blocked }: { r: ReviewDetail; onDone: () => void; blocked: string }) {
   const [mode, setMode] = useState<"" | "reject">("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -79,10 +80,11 @@ function DecidePanel({ r, onDone }: { r: ReviewDetail; onDone: () => void }) {
       <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
                 placeholder={mode === "reject" ? "반려 사유 (필수)" : "의견 (선택)"}
                 className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-[14px] outline-none focus:border-brand" />
+      {blocked && <div className="mt-3 rounded-lg bg-warn-soft px-3 py-2 text-[13px] text-warn">{blocked}</div>}
       <div className="mt-3 flex gap-2">
         {mode === "reject" ? (
           <>
-            <button disabled={busy || !note.trim()} onClick={() => decide(false)}
+            <button disabled={busy || !!blocked || !note.trim()} onClick={() => decide(false)}
                     className="flex-1 rounded-lg bg-err py-2.5 text-[14px] font-semibold text-white disabled:opacity-50">
               {busy ? "처리 중…" : "반려"}
             </button>
@@ -91,11 +93,11 @@ function DecidePanel({ r, onDone }: { r: ReviewDetail; onDone: () => void }) {
           </>
         ) : (
           <>
-            <button disabled={busy} onClick={() => decide(true)}
+            <button disabled={busy || !!blocked} onClick={() => decide(true)}
                     className="flex-1 rounded-lg bg-brand py-2.5 text-[14px] font-semibold text-white hover:bg-brand-ink disabled:opacity-50">
               {busy ? "처리 중…" : "승인"}
             </button>
-            <button disabled={busy} onClick={() => setMode("reject")}
+            <button disabled={busy || !!blocked} onClick={() => setMode("reject")}
                     className="rounded-lg border border-line px-4 py-2.5 text-[14px] font-semibold text-err hover:bg-err-soft">반려</button>
           </>
         )}
@@ -127,12 +129,21 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   // 결정 직후 3080 처리 결과를 기다리는 동안만 자주 새로 읽는다
   const { data: r, error, loading, reload } = useApi<ReviewDetail>(`/api/reviews/${id}`,
-    (d) => (d?.process_state === "waiting" ? 5_000 : 30_000));
+    (d) => (d?.process_state === "waiting" || d?.edit?.state === "waiting" ? 5_000 : 30_000));
+  const [tab, setTab] = useState<"doc" | "sel">("doc");
+  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState("");
+  const onDirty = useCallback((d: boolean) => setDirty(d), []);
   useEffect(() => { if (r) document.title = `${r.product} ${r.version} · ${KIND_LABEL[r.kind]?.label ?? ""}`; }, [r]);
 
   if (loading && !r) return <Skeleton rows={6} />;
   if (!r) return <Empty>{error || "검수 건이 없습니다"}</Empty>;
   const kind = KIND_LABEL[r.kind];
+  const sel = r.summary?.selection;
+  const editWaiting = r.edit?.state === "waiting";
+  const selLocked = !sel?.editable || !r.can_decide || editWaiting;
+  const blocked = editWaiting ? "3080 이 저장한 선별표로 전체 이력 RN 을 다시 만드는 중입니다"
+    : dirty ? "공개 선별표에 저장하지 않은 변경이 있습니다" : "";
 
   return (
     <>
@@ -150,10 +161,38 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
-          <Card title="문서" icon="file"><Viewer files={r.files} /></Card>
+          {sel && (
+            <div className="mb-3 flex rounded-lg border border-line bg-surface p-0.5 text-[13px] font-semibold sm:inline-flex">
+              {([["doc", "문서"], ["sel", sel.editable && r.can_decide ? "공개 선별표 · 입력값 수정" : "공개 선별표 · 입력값"]] as const).map(([k, label]) => (
+                <button key={k} onClick={() => setTab(k)}
+                        className={cx("flex-1 rounded-md px-3.5 py-1.5", tab === k ? "bg-brand text-white" : "text-ink-2 hover:bg-surface-2")}>
+                  {label}{k === "sel" && dirty && <span className="ml-1">●</span>}
+                </button>
+              ))}
+            </div>
+          )}
+          {r.edit && r.edit.state !== "done" && (
+            <div className={cx("mb-3 rounded-xl px-4 py-3 text-[13.5px]", r.edit.state === "waiting" ? "bg-info-soft text-info" : "bg-err-soft text-err")}>
+              {r.edit.state === "waiting"
+                ? `${r.edit.by_user} 님이 저장한 선별표를 3080 이 반영하는 중 — 전체 이력 RN 을 다시 만들어 올립니다`
+                : `선별표 반영 실패 — ${r.edit.message}`}
+            </div>
+          )}
+          {saved && r.edit?.state === "done" && (
+            <div className="mb-3 rounded-xl bg-ok-soft px-4 py-3 text-[13.5px] text-ok">{r.edit.message || "반영했습니다"}</div>
+          )}
+          <div className={cx(tab !== "doc" && sel && "hidden")}>
+            <Card title="문서" icon="file"><Viewer files={r.files} /></Card>
+          </div>
+          {sel && (
+            <div className={cx(tab !== "sel" && "hidden")}>
+              <SelectionEditor reviewId={r.id} sel={sel} locked={selLocked} onDirty={onDirty}
+                               onSaved={(m) => { setSaved(m); reload(); }} />
+            </div>
+          )}
         </div>
         <div className="space-y-5">
-          {r.can_decide ? <DecidePanel r={r} onDone={reload} /> : <Outcome r={r} />}
+          {r.can_decide ? <DecidePanel r={r} onDone={reload} blocked={blocked} /> : <Outcome r={r} />}
 
           {(r.summary?.lines?.length || r.summary?.revision?.length) ? (
             <Card title="변경 내용" icon="rounds">

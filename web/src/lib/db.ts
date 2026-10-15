@@ -82,6 +82,21 @@ create table if not exists confirm_events (
 );
 -- 볼 사람을 정한 건(시험 등) — 비어 있으면 역할대로, 있으면 이 사람들만(관리자 포함 다른 사람은 못 본다)
 alter table confirm_reviews add column if not exists visible_to text[] not null default '{}';
+-- 1차 결재자가 웹에서 저장한 공개 선별표 · 입력값 — 3080 이 가져가 반영(전체 이력 RN 재생성)
+create table if not exists confirm_edits (
+  id bigserial primary key,
+  review_id bigint not null references confirm_reviews (id) on delete cascade,
+  by_user text not null,
+  at timestamptz not null default now(),
+  rows jsonb not null,
+  inputs jsonb,
+  state text not null default 'waiting',      -- waiting | done | error
+  message text not null default '',
+  processed_at timestamptz
+);
+create index if not exists ix_confirm_edits_waiting on confirm_edits (state) where state = 'waiting';
+alter table confirm_files add column if not exists updated_at timestamptz not null default now();
+alter table confirm_edits enable row level security;
 -- Supabase 는 public 표를 Data API(anon 키)로 연다 — RLS 를 켜고 정책을 두지 않아 그 길을 막는다.
 -- 앱은 표 주인(postgres)으로 직접 붙으므로 RLS 를 받지 않는다.
 alter table confirm_users enable row level security;

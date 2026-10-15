@@ -19,6 +19,6 @@ export async function POST(req: Request) {
   await sql`
     insert into confirm_files (review_id, name, label, mime, size, data)
     values (${f.review_id}, ${f.name}, ${f.label ?? ""}, ${f.mime}, ${data.length}, ${data})
-    on conflict (review_id, name) do update set label = excluded.label, mime = excluded.mime, size = excluded.size, data = excluded.data`;
+    on conflict (review_id, name) do update set label = excluded.label, mime = excluded.mime, size = excluded.size, data = excluded.data, updated_at = now()`;
   return NextResponse.json({ ok: true, size: data.length });
 }

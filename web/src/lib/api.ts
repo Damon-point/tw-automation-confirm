@@ -84,10 +84,24 @@ export type ReviewRow = {
   decided_via: string; note: string; process_state: "" | "waiting" | "done" | "error"; process_message: string;
   processed_at: string | null; files: number;
 };
-export type ReviewFile = { id: string; name: string; label: string; mime: string; size: number };
+export type ReviewFile = { id: string; name: string; label: string; mime: string; size: number; updated_at: string };
+
+export type SelRow = {
+  no: number | string; issue: string; team?: string; customer?: string; gubun?: string;
+  include: "Y" | "X"; reason?: string; public?: string; redmine?: string; sensitive?: boolean;
+  apply_note: string; exclude_note?: string; kind?: string; manual?: boolean;
+};
+/** 선별표의 입력 값 칸 — key 가 빈 것은 최초 릴리즈에서 새로 더한 항목 */
+export type InputField = { key: string; label: string; required: boolean; value: string; manual: boolean; version: string };
+export type Selection = {
+  rows: SelRow[]; inputs: { fields: InputField[]; editable: boolean; now_version: string };
+  exclude_notes: string[]; edited_at: string; edited_by: string; editable: boolean;
+};
+export type ReviewEdit = { id: string; by_user: string; at: string; state: "waiting" | "done" | "error"; message: string };
+
 export type ReviewDetail = ReviewRow & {
-  summary: { revision?: string[]; lines?: { label: string; value: string }[]; links?: { label: string; url: string }[] };
-  files: ReviewFile[]; events: { at: string; who: string; what: string }[]; can_decide: boolean;
+  summary: { revision?: string[]; lines?: { label: string; value: string }[]; links?: { label: string; url: string }[]; selection?: Selection };
+  files: ReviewFile[]; events: { at: string; who: string; what: string }[]; can_decide: boolean; edit: ReviewEdit | null;
 };
 
 export const KIND_LABEL: Record<string, { label: string; target: string }> = {
