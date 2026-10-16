@@ -19,7 +19,9 @@ function LoginForm() {
     setErr("");
     try {
       await api("/api/login", { method: "POST", body: JSON.stringify({ username, password }) });
-      router.replace(params.get("next") || "/");
+      // 이 사이트 안의 경로로만 돌아간다(//다른곳 · 바깥 주소 막음)
+      const next = params.get("next") || "";
+      router.replace(next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/");
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : "로그인 실패");
     } finally {

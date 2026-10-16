@@ -175,7 +175,7 @@ function NewsletterPanel({ nl }: { nl: NewsletterInfo }) {
 }
 
 /** License 발급 요청 — 결재 판단에 필요한 칸만 한 표로. PO 는 오른쪽 문서. */
-function LicensePanel({ lic }: { lic: LicenseInfo }) {
+function LicensePanel({ lic, po }: { lic: LicenseInfo; po?: ReviewFile }) {
   const rows: [string, React.ReactNode, boolean?][] = [
     ["회사명", lic.company_name, true],
     ["수량", lic.quantity ? `${lic.quantity}대` : "", true],
@@ -187,14 +187,24 @@ function LicensePanel({ lic }: { lic: LicenseInfo }) {
     ["문서 번호", <span key="doc" className="font-mono">{lic.doc_id}</span>],
     ["신청일", lic.date_issued],
     ["요청자", lic.requested_by],
-    ["PO 파일", lic.po_name],
+    ["PO 파일", po ? (
+      <span key="po" className="flex flex-wrap items-center gap-2">
+        <span className="min-w-0 break-all">{po.name}</span>
+        <a href={`/api/files/${po.id}?download=1`} className="inline-flex items-center gap-1 rounded-lg bg-brand px-2.5 py-1 text-[12.5px] font-bold text-white hover:bg-brand-ink">
+          <Icon name="file" className="h-3.5 w-3.5" /> 받기 · {kb(po.size)}
+        </a>
+        <a href={`/api/files/${po.id}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-[12.5px] font-semibold text-ink-2 hover:bg-surface-2">
+          <Icon name="eye" className="h-3.5 w-3.5" /> 새 창
+        </a>
+      </span>
+    ) : lic.po_name],
   ];
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-line bg-surface">
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3">
           <h2 className="text-[16px] font-bold">License 발급 요청</h2>
-          <span className="text-[12.5px] text-ink-3">승인하면 3080 이 License Key 생성 · 공개키 검증 · 인증서 PDF · 결과 메일까지 처리합니다</span>
+          <span className="text-[12.5px] text-ink-3">오른쪽이 승인하면 나갈 License Certificate — 승인하면 3080 이 공개키 검증 · 인증서 확정 · 결과 메일까지 처리합니다</span>
         </header>
         <div className="divide-y divide-line">
           {rows.filter(([, v]) => v !== "" && v != null).map(([k, v, strong]) => (
@@ -253,9 +263,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   const revision = r.summary?.revision ?? [];
   const nl = r.summary?.newsletter;
   const lic = r.summary?.license;
+  // License 는 인증서가 검수 대상이고 PO 는 받아서 보는 근거 서류 — 문서 칸에는 인증서만
+  const po = lic ? r.files.find((f) => f.label === "PO") : undefined;
+  const shownFiles = lic ? r.files.filter((f) => f !== po) : r.files;
   const side = (
     <div className="min-w-0 xl:sticky xl:top-[calc(3.5rem+5.5rem)] xl:h-[calc(100vh-3.5rem-6.5rem)]">
-      <Viewer files={r.files} tall />
+      <Viewer files={shownFiles} tall />
     </div>
   );
 
@@ -294,7 +307,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         </div>
       ) : lic ? (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(560px,1.15fr)]">
-          <div className="min-w-0"><LicensePanel lic={lic} /></div>
+          <div className="min-w-0"><LicensePanel lic={lic} po={po} /></div>
           {side}
         </div>
       ) : nl ? (
