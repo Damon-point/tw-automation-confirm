@@ -61,7 +61,8 @@ export async function POST(req: Request) {
       update confirm_reviews
          set status = 'closed', decided_by = ${c.decided_by ?? ""}, decided_at = ${ts(c.decided_at)}, decided_via = '3080',
              note = ${c.note ?? ""}, process_state = 'done',
-             process_message = ${c.status === "approved" ? "3080 에서 승인됨" : c.status === "rejected" ? "3080 에서 반려됨" : "3080 에서 요청이 취소됨"},
+             process_message = ${c.status === "approved" ? "3080 에서 승인됨" : c.status === "rejected" ? "3080 에서 반려됨"
+               : c.status === "moved" ? "OS Update 는 8080 에서 결재합니다" : "3080 에서 요청이 취소됨"},
              processed_at = now(), updated_at = now()
        where source_key = ${c.source_key} and status = 'pending'
       returning id`;
