@@ -178,6 +178,12 @@ export default function SelectionEditor({ reviewId, sel, locked, showExclude, on
                       {r.team && <span>{r.team}</span>}
                       {r.customer && <span>· {r.customer}</span>}
                       {r.redmine?.startsWith("http") && <a href={r.redmine} target="_blank" rel="noreferrer" className="font-mono text-brand-ink hover:underline">#{r.redmine.split("/").pop()}</a>}
+                      {(r.merged ?? []).length > 0 && (
+                        <span className="inline-flex flex-wrap items-center gap-1 rounded bg-info-soft px-1.5 py-0.5 text-info" title="Redmine 에서 서로 연결된 같은 문제 — 한 행으로 묶었습니다">
+                          함께 묶인 이슈
+                          {(r.merged ?? []).map((m) => <a key={m.id} href={m.redmine} target="_blank" rel="noreferrer" title={m.subject} className="font-mono font-semibold hover:underline">#{m.id}</a>)}
+                        </span>
+                      )}
                       {r.reason && <button onClick={() => setOpenReason(openReason === k ? "" : k)} className="text-brand-ink hover:underline">{openReason === k ? "판정 사유 접기" : "판정 사유"}</button>}
                     </div>
                     {openReason === k && <div className="mt-1.5 rounded-lg bg-surface-2 px-2.5 py-1.5 text-[12.5px] text-ink-2">{r.reason}</div>}

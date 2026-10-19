@@ -90,6 +90,8 @@ export type SelRow = {
   no: number | string; issue: string; team?: string; customer?: string; gubun?: string;
   include: "Y" | "X"; reason?: string; public?: string; redmine?: string; sensitive?: boolean;
   apply_note: string; exclude_note?: string; kind?: string; manual?: boolean;
+  /** Redmine 에서 서로 연결돼 이 행에 묶인 이슈 */
+  merged?: { id: string; subject: string; redmine: string }[];
 };
 /** 선별표의 입력 값 칸 — key 가 빈 것은 최초 릴리즈에서 새로 더한 항목 */
 export type InputField = { key: string; label: string; required: boolean; value: string; manual: boolean; version: string };
