@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { use, useCallback, useEffect, useState } from "react";
 import SelectionEditor from "@/components/SelectionEditor";
 import { KIND_TONE, ReviewState, when } from "@/components/ReviewBits";
@@ -65,18 +66,23 @@ function DecideBar({ r, onDone, blocked }: { r: ReviewDetail; onDone: () => void
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const router = useRouter();
 
   async function decide(approve: boolean) {
     setBusy(true);
     setErr("");
     try {
       await api(`/api/reviews/${r.id}/decide`, { method: "POST", body: JSON.stringify({ approve, note: note.trim() }) });
+      // License 는 결정하면 목록(홈)으로 — 남은 처리(키 검증 · 인증서 · 결과 메일)는 3080 이 이어서 한다(2026-10-21)
+      if (r.kind === "license") {
+        router.replace("/");
+        return;
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : "처리하지 못했습니다");
-    } finally {
-      setBusy(false);
-      onDone();
     }
+    setBusy(false);
+    onDone();
   }
 
   const prevErr = r.process_state === "error" && r.process_message ? `이전 결정을 3080 이 처리하지 못했습니다 — ${r.process_message}` : "";
